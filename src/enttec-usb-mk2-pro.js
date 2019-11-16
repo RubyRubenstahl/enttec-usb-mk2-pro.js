@@ -1,10 +1,8 @@
 const Serialport = require("serialport");
 const messageLabels = require("./message-lables");
 const API_KEY = 0xe403a4c9;
-// You need to somehow find the path of the interface (best done via
-// `Serialport.list()` and finding the right device)
 
-class EnttecMK2Usb {
+class EnttecUsbMk2Pro {
   constructor(serialportName) {
     this.serialport = new Serialport(serialportName);
     this.lastReceivedData = null;
@@ -113,4 +111,4 @@ class EnttecMK2Usb {
   }
 }
 
-module.exports = EnttecMK2Usb;
+module.exports = EnttecUsbMk2Pro;
