@@ -2,6 +2,7 @@
   "name": "enttec-usb-pro-mk2",
   "version": "0.0.1",
   "description": "Read and write DMX512 data on an ENTTEC USB Pro MK2",
+  "repository": "https://github.com/RubyRubenstahl/enttec-usb-mk2-pro.js",
   "main": "src/enttec-usb-mk2-pro.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
