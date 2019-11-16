@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Ruby Rubenstahl",
-  "license": "MI",
+  "license": "MIT",
   "dependencies": {
     "serialport": "^8.0.5"
   }
