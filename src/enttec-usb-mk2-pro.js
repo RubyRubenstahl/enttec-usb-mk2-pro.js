@@ -1,5 +1,5 @@
 const Serialport = require("serialport");
-const messageLabels = require("./message-lables");
+const messageLabels = require("./message-labels");
 const API_KEY = 0xe403a4c9;
 
 class EnttecUsbMk2Pro {
