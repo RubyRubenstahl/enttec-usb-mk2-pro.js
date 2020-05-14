@@ -1,5 +1,5 @@
 const MK2 = require("../src/enttec-usb-mk2-pro");
-const mk2 = new MK2("COM4");
+const mk2 = new MK2("COM3");
 
 function update() {
   const ms = new Date().getTime();
