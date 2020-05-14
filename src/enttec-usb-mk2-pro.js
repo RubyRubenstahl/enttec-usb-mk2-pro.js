@@ -67,7 +67,7 @@ class EnttecUsbMk2Pro {
   async sendPacket(label, data) {
     const buffer = Buffer.alloc(data.length + 5);
 
-    buffer.writeUInt8(0x7e, 0); // usbpro packet start marker
+    buffer.writeUInt8(messageLabels.DMX_START_CODE, 0); // usbpro packet start marker
     buffer.writeUInt8(label, 1);
     buffer.writeUInt16LE(data.length, 2);
 
