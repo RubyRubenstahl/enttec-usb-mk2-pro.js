@@ -1,6 +1,9 @@
+const util = require('util');
+const EventEmitter = require("events").EventEmitter;
 const Serialport = require("serialport");
 const messageLabels = require("./message-labels");
 const API_KEY = 0xe403a4c9;
+const { shallowEqualArrays } = require("shallow-equal");
 
 class EnttecUsbMk2Pro {
   constructor(serialportName) {
@@ -24,20 +27,19 @@ class EnttecUsbMk2Pro {
     });
   }
 
+  /**
+   * Listen incoming data from the serial port
+   */
   startSerialPortListener() {
     console.log("starting listener");
-    this.serialport.on("data", data => {
-      // console.log("data");
-      // console.log("DMXData:", data);
-      const messageType = data[1];
-
+    this.serialport.on("data", (rawData) => {
+      const messageType = rawData[1];
       switch (messageType) {
         case messageLabels.GET_WIDGET_PARAMS_REPLY:
-          console.log("params received");
+          this.handleIncomingParamsReply(rawData);
           break;
         case messageLabels.RECEIVE_DMX_PORT1:
-          const dmxData = [...data].slice(6);
-          this.lastReceivedData = dmxData;
+          this.handleIncomingDmxPacket(rawData);
           break;
       }
     });
@@ -47,12 +49,39 @@ class EnttecUsbMk2Pro {
     });
   }
 
+  handleIncomingParamsReply(rawData) {
+    console.log("params received");
+  }
+
+  /**
+   * Store the last received dmx data values and
+   * emit the packet as a `dmxdata event.
+   * @param {buffer} rawData 
+   * @private
+   */
+  handleIncomingDmxPacket(rawData) {
+    const dmxData = [...rawData].slice(6);
+  
+    
+    // Ignore if the data hasn't changed
+    if (shallowEqualArrays(dmxData, this.lastReceivedData)) {
+      return;
+    }
+    this.lastReceivedData = dmxData;
+    this.emit('dmxdata', dmxData)
+  }
+
+  /**
+   * Writes a buffer to the serial port,
+   * draining after
+   * @param {buffer} buffer
+   * @private
+   */
   write(buffer) {
-    this.serialport.write(buffer, err => {
+    this.serialport.write(buffer, (err) => {
       if (err) {
         return reject(err);
       }
-
       this.serialport.drain();
     });
   }
@@ -67,7 +96,7 @@ class EnttecUsbMk2Pro {
   async sendPacket(label, data) {
     const buffer = Buffer.alloc(data.length + 5);
 
-    buffer.writeUInt8(0x7e, 0); // usbpro packet start marker
+    buffer.writeUInt8(messageLabels.DMX_START_CODE, 0); // usbpro packet start marker
     buffer.writeUInt8(label, 1);
     buffer.writeUInt16LE(data.length, 2);
 
@@ -78,27 +107,36 @@ class EnttecUsbMk2Pro {
     return this.write(buffer);
   }
 
-  writeDmxData(dmxData, universe) {
+  /**
+   * Send DMX data to a port on the MK2
+   * @param {[Number]} dmxData - Array of numbers of length 0-512 containing the DMX data
+   * @param {*} port - Zero based porn number to send the data to
+   */
+  writeDmxData(dmxData, port) {
     // for whatever-reason, dmx-transmission has to start with a zero-byte.
-    const dmxBuffer = Buffer.from(dmxData).map(level =>
+    const dmxBuffer = Buffer.from(dmxData).map((level) =>
       level < 0 ? 0 : level > 255 ? 255 : level
     );
     const frameBuffer = Buffer.alloc(513);
     frameBuffer.writeUInt8(0, 0);
     dmxBuffer.copy(frameBuffer, 1);
-    const label =
-      universe === 1
-        ? messageLabels.SEND_DMX_PORT1
-        : messageLabels.SEND_DMX_PORT2;
-
+    const label = [messageLabels.SEND_DMX_PORT1, messageLabels.SEND_DMX_PORT2][
+      port
+    ];
     this.sendPacket(label, frameBuffer);
   }
 
+  /**
+   * Request the current config & status information
+   */
   getDeviceInfo() {
     this.serialport.drain();
     this.sendPacket(messageLabels.GET_WIDGET_PARAMS, Buffer.from([0], 2));
   }
 
+  /**
+   * Set the DMX device to input mode
+   */
   startDmxRead() {
     this.mode = "receive";
     this.serialport.drain();
@@ -106,9 +144,15 @@ class EnttecUsbMk2Pro {
     this.sendPacket(messageLabels.RECEIVE_DMX_ON_CHANGE, Buffer.from([0], 2));
   }
 
-  getDmxVals(universe = 1) {
+  /**
+   * Get the current DMX levels from a port on the MK2
+   * @returns {[Number]} - Array of integers representing the current DMX level data
+   */
+  getDmxVals() {
     return this.lastReceivedData;
   }
 }
+
+util.inherits(EnttecUsbMk2Pro, EventEmitter);
 
 module.exports = EnttecUsbMk2Pro;
