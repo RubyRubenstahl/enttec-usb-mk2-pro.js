@@ -3,6 +3,7 @@ const EventEmitter = require("events").EventEmitter;
 const Serialport = require("serialport");
 const messageLabels = require("./message-labels");
 const API_KEY = 0xe403a4c9;
+const { shallowEqualArrays } = require("shallow-equal");
 
 class EnttecUsbMk2Pro {
   constructor(serialportName) {
@@ -60,6 +61,12 @@ class EnttecUsbMk2Pro {
    */
   handleIncomingDmxPacket(rawData) {
     const dmxData = [...rawData].slice(6);
+  
+    
+    // Ignore if the data hasn't changed
+    if (shallowEqualArrays(dmxData, this.lastReceivedData)) {
+      return;
+    }
     this.lastReceivedData = dmxData;
     this.emit('dmxdata', dmxData)
   }
