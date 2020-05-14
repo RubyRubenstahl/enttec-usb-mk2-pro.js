@@ -1,6 +1,6 @@
 {
   "name": "enttec-usb-pro-mk2",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Read and write DMX512 data on an ENTTEC USB Pro MK2",
   "repository": "https://github.com/RubyRubenstahl/enttec-usb-mk2-pro.js",
   "main": "src/enttec-usb-mk2-pro.js",
